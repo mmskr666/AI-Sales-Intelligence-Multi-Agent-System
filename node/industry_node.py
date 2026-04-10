@@ -5,8 +5,7 @@ from model.node_model import Industry
 from node.base_mcp_agent import run_mcp_agent
 from prompt.industry_prompt import industry_prompt
 from state.SalesState import SalesState
-from tools.llm import llm
-from tools.llm_factory import create_llm_with_tools
+from tools.llm_factory import create_llm_with_tools, create_llm
 from tools.logger import logger
 from tools.mcp_tools import industry_tool
 
@@ -19,7 +18,7 @@ prompt_industry = ChatPromptTemplate.from_messages(
     ]
 ).partial(format_constructions=parser.get_format_instructions())
 
-chain = prompt_industry | llm | parser
+chain = prompt_industry | create_llm() | parser
 llm_with_tools,tools_map = create_llm_with_tools([industry_tool])
 def industry_node(state:SalesState):
     logger.debug("👉 Industry Agent")

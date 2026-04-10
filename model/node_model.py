@@ -12,3 +12,10 @@ class News(BaseModel):
 
 class Industry(BaseModel):
     name:str = Field(description="行业名称")
+
+class Summary(BaseModel):
+    company: str = Field(description="公司名称")
+    industry: str = Field(description="行业名称")
+    analysis: str = Field(description="分析结果")
+    score: int = Field(description="评分")
+    recommendation: str = Field(description="推荐结果")

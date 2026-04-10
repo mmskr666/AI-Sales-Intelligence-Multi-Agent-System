@@ -14,3 +14,14 @@ def create_llm_with_tools(tools):
     )
     tools_map = {tool.name: tool for tool in tools}
     return llm.bind_tools(tools),tools_map
+
+def create_llm():
+    llm = init_chat_model(
+        chat_model,
+        api_key=API_KEY,
+        base_url=BASE_URL,
+        temperature=0.7,
+        timeout=60,
+        max_tokens=1000
+    )
+    return llm
