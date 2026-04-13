@@ -19,3 +19,8 @@ class Summary(BaseModel):
     analysis: str = Field(description="分析结果")
     score: int = Field(description="评分")
     recommendation: str = Field(description="推荐结果")
+
+class Score(BaseModel):
+    score:int = Field(description="评分(0-100)")
+    level:str = Field(description="等级(低价值客户/中价值客户/高价值客户)")
+    reason:str = Field(description="评分评级原因")

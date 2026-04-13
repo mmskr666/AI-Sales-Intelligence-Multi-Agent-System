@@ -65,7 +65,7 @@ def get_news(query:str):
         return {"news_info": f"请求异常：{str(e)}"}
 
 def get_industry(industry_name:str):
-    if industry_name == "人工智能":
+    if industry_name == "人工智能" or industry_name == "AI" or industry_name == "ai行业":
         return {
             "name": "AI",
             "average_growth": "0.5"
