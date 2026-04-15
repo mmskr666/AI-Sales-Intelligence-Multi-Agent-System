@@ -1,4 +1,4 @@
-from konwledge.vector_store import load_vector
+from knowledge.vector_store import load_vector
 
 
 def get_retriever(k=3):

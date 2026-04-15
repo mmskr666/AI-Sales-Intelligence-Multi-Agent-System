@@ -1,6 +1,6 @@
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 
-from konwledge.embedding import get_embedding
+from knowledge.embedding import get_embedding
 from config.configuration import CHROMA_DB_PATH
 
 

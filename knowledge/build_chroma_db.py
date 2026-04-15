@@ -1,5 +1,5 @@
-from konwledge.rag_tools import load_text, cleaned_text, spilt_text
-from konwledge.vector_store import build_vector
+from knowledge.rag_tools import load_text, cleaned_text, spilt_text
+from knowledge.vector_store import build_vector
 
 
 def build_chroma_db():

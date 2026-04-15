@@ -5,6 +5,7 @@ class SalesState(TypedDict):
     input:str
     session_id:str
     task:list[str]
+    intent:str
 
     company_info:dict[str,Any]
     industry_info:dict[str,Any]

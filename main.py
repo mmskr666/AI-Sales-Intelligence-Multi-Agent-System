@@ -1,11 +1,8 @@
-from graph.sales_graph import build_graph
+from fastapi import FastAPI
+from api.app import app_router
 
-if __name__ == '__main__':
-    graph = build_graph()
-    result = graph.invoke({
-        "input": "帮我查询一下字节跳动",
-        "session_id": "123"
-    })
-    print("------------------------------")
-    # print(result["task"])
-    print(result["result"])
+
+app = FastAPI()
+
+app.include_router(app_router)
+
