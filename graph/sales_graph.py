@@ -29,7 +29,7 @@ def build_graph():
         "router",
         get_intent,
         {
-            "chat":"summary",
+            "build":"summary",
             "sales":"planner",
             "refuse":"summary"
         }

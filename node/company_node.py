@@ -30,7 +30,7 @@ def company_node(state:SalesState):
         result:Company = company_chain.invoke({"input":text,"long_memory":long_memory})
         try:
             from tools.executor import execute_with_graph
-            content = execute_with_graph(task(llm_with_tools, tools_map,result.name), state, "news")
+            content = execute_with_graph(task(llm_with_tools, tools_map,result.name), state, "company")
         except Exception as e:
             return {
                 "company_info": "未获取到公司信息，降低评分",

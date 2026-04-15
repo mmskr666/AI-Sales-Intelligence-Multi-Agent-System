@@ -49,7 +49,7 @@ def industry_node(state:SalesState):
                     docs = hybrid_search(question, retriever,bm25=bm25,corpus=corpus,docs=all_knowledge,k=3)
                     knowledge.extend(docs)
                 rank_docs = rank_docs + rerank_cross_encoder(rewrite_text,knowledge)
-            content = execute_with_graph(task(llm_with_tools, tools_map, response.name), state, "news")
+            content = execute_with_graph(task(llm_with_tools, tools_map, response.name), state, "industry")
             save_rag_memory(state["session_id"],text,rank_docs)
             prompt = f"你是一个行业分析大师，请基于以下资料进行分析：行业基本信息：{content}\n行业信息知识库：{rank_docs}.请给出一百字内的简洁分析"
             industry_info = create_llm().invoke(prompt)
