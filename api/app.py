@@ -1,5 +1,7 @@
 import datetime
 import json
+import uuid
+
 from db.db_store import AsyncSessionLocal
 from crud.session import get_session_by_id, save_session
 from crud.messages import save_message, get_message
@@ -34,10 +36,16 @@ async def get_sessions_list(skip=0,limit:int=10,db = Depends(db_store.get_db)):
     sessions = await get_sessions(db,skip,limit)
     return success(sessions)
 
-@app_router.get("/get_session/{session_id}")
+@app_router.get("/get_session/{session_id}",summary="根据会话id查询会话内容")
 async def get_session(session_id:str,db = Depends(db_store.get_db)):
     messages = await get_message(db,session_id)
     return success(messages)
+@app_router.get("/add_session",summary="创建会话")
+async def add_session(db = Depends(db_store.get_db)):
+    session_id = f"session:{str(uuid.uuid4())}"
+    await save_session(db, session_id, create_session_title())
+    return success(session_id)
+
 
 async def generate_stream(session_id, question):
     # 用来存最终的 analysis 文本

@@ -4,7 +4,9 @@ import requests
 import time
 from datetime import datetime
 
-# 页面全局配置
+# --------------------------
+# 页面配置
+# --------------------------
 st.set_page_config(
     page_title="AI 销售智能分析 Agent",
     layout="wide",
@@ -12,278 +14,509 @@ st.set_page_config(
     page_icon="📊"
 )
 
-# 全局样式（纯白 + 干净清爽 + 修复滚动问题）
+# --------------------------
+# 自定义样式优化
+# --------------------------
 st.markdown("""
 <style>
-/* 全局纯白背景 */
-.stApp {
-    background-color: #ffffff;
-    color: #121212;
-    overflow: hidden !important; /* 禁止页面整体滚动 */
+/* 主容器样式 */
+.main {
+    padding-top: 20px;
 }
-/* 去掉默认边距 */
-.block-container {
-    padding-top: 0rem !important;
-    padding-bottom: 0rem !important;
-    max-width: 100% !important;
-    height: 100vh !important; /* 占满整个视口高度 */
-    display: flex !important;
-    flex-direction: row !important;
+.main .block-container {
+    padding-top: 20px;
 }
 
-/* 侧边栏改成清爽浅色 */
+/* 侧边栏样式 */
 [data-testid="stSidebar"] {
-    background-color: #f8f9fa !important;
-    color: #212529 !important;
-    border-right: 1px solid #dee2e6 !important;
-    padding: 10px 15px !important;
-    padding-top: 10px !important;
-    position: fixed !important;
-    height: 100vh !important;
-    width: 350px !important;
-    overflow-y: auto !important;
+    background-color: #f8f9fa;
 }
-/* 隐藏折叠按钮，永远不可折叠 */
-button[kind="header"] {
-    display: none !important;
+[data-testid="stSidebar"] .stMarkdown h2, 
+[data-testid="stSidebar"] .stMarkdown h3 {
+    color: #2c3e50;
 }
 
-/* 主聊天区容器：占满剩余高度，flex布局 */
-.main-chat-container {
-    flex: 1;
-    display: flex !important;
-    flex-direction: column !important;
-    height: 100vh !important;
-    padding: 0 !important;
-    margin-left: 350px !important; /* 给侧边栏留出空间 */
+/* 会话列表样式 */
+.session-item {
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin: 4px 0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
 }
-
-/* 消息滚动区：可滚动，占满剩余空间 */
-.chat-messages {
-    flex: 1 !important;
-    overflow-y: auto !important;
-    padding: 20px 50px !important;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 16px !important;
-    /* 自动滚动到底部 */
-    scroll-behavior: smooth !important;
+.session-item:hover {
+    background-color: #f0f7ff;
+    border-color: #d0e3ff;
 }
-
-/* 输入框容器：固定在最底部，不滚动 */
-.chat-input-container {
-    padding: 15px 50px !important;
-    background-color: #ffffff !important;
-    border-top: 1px solid #f0f0f0 !important;
-    flex-shrink: 0 !important; /* 禁止压缩，永远在底部 */
+.session-item.active {
+    background-color: #e6f0ff;
+    border-color: #0066cc;
+    font-weight: 500;
+}
+.session-item .title {
+    font-size: 14px;
+    color: #2c3e50;
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.session-item .time {
+    font-size: 12px;
+    color: #666;
 }
 
 /* 消息气泡样式 */
-.user-box {
-    display: flex;
-    justify-content: flex-end;
+.stChatMessage {
+    padding: 0.5rem 0;
+}
+[data-testid="stChatMessage"] > div {
     width: 100%;
 }
-.ai-box {
-    display: flex;
-    justify-content: flex-start;
-    width: 100%;
+[data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] {
+    background-color: transparent;
 }
-.user-bubble {
-    background-color: #f0f0f0;
-    color: #222;
-    padding: 12px 18px;
-    border-radius: 16px;
-    max-width: 65%;
-    word-wrap: break-word;
+.user-message {
+    background-color: #f0f7ff;
+    border-radius: 18px 18px 4px 18px;
+    padding: 12px 16px;
+    margin: 4px 0;
+    max-width: 80%;
+    margin-left: auto;
 }
-.ai-bubble {
-    background-color: #f8f8f8;
-    color: #222;
-    padding: 12px 18px;
-    border-radius: 16px;
-    max-width: 65%;
-    word-wrap: break-word;
+.assistant-message {
+    background-color: #ffffff;
     border: 1px solid #eee;
+    border-radius: 18px 18px 18px 4px;
+    padding: 12px 16px;
+    margin: 4px 0;
+    max-width: 80%;
+    margin-right: auto;
+}
+
+/* 按钮样式优化 */
+.stButton > button {
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+.stButton > button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 /* 输入框样式 */
-[data-testid="stChatInput"] {
-    background-color: #ffffff !important;
-    border: 1px solid #e0e0e0 !important;
-    border-radius: 24px !important;
-    width: 100% !important;
-    margin: 0 !important;
+[data-testid="stChatInputContainer"] {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
-[data-testid="stChatInput"] input {
-    background-color: #ffffff !important;
-    color: #333 !important;
+[data-testid="stChatInputTextArea"] textarea {
+    min-height: 60px;
 }
 
-/* 历史会话按钮样式 */
-.session-btn {
-    width: 100%;
-    text-align: left;
-    padding: 8px 12px;
-    margin: 4px 0;
-    border-radius: 8px;
-    border: 1px solid #e0e0e0;
-    background-color: #ffffff;
-    cursor: pointer;
+/* 状态指示器 */
+.status-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 8px;
 }
-.session-btn:hover {
-    background-color: #f5f5f5;
+.status-active {
+    background-color: #28a745;
+}
+.status-inactive {
+    background-color: #dc3545;
 }
 </style>
 """, unsafe_allow_html=True)
 
-# ======================
-# 接口请求工具函数
-# ======================
-def fetch_session_list():
-    """获取所有历史会话列表"""
+
+# --------------------------
+# API 工具函数
+# --------------------------
+def api_create_session():
+    """创建新会话"""
     try:
-        res = requests.get("http://127.0.0.1:8000/api/chat/get_sessions?skip=0&limit=20")
+        res = requests.get("http://127.0.0.1:8000/api/chat/add_session", timeout=60)
         if res.status_code == 200:
             data = res.json()
-            return data.get("data", [])
-    except Exception as e:
-        st.error(f"获取会话列表失败: {e}")
-    return []
+            if data.get("code") == "success":
+                session_id = data.get("data", "")
 
-def fetch_session_messages(session_id: str):
-    """根据session_id获取对应会话的所有消息"""
+                # 创建会话标题
+                title = f"会话 {datetime.now().strftime('%m-%d %H:%M')}"
+
+                # 保存到本地状态
+                sessions = st.session_state.get("sessions", [])
+                sessions.insert(0, {
+                    "session_id": session_id,
+                    "title": title,
+                    "time": datetime.now().isoformat()
+                })
+                st.session_state.sessions = sessions
+
+                return session_id
+    except Exception as e:
+        st.error(f"创建会话失败: {str(e)}")
+    return ""
+
+
+def api_get_sessions():
+    """获取会话列表"""
     try:
-        res = requests.get(f"http://127.0.0.1:8000/api/chat/get_session/{session_id}")
+        res = requests.get("http://127.0.0.1:8000/api/chat/get_sessions?skip=0&limit=20", timeout=60)
         if res.status_code == 200:
             data = res.json()
-            messages = data.get("data", [])
-            # 按create_time升序排序，保证展示顺序正确
-            return sorted(messages, key=lambda x: x["create_time"])
+            if data.get("code") == "success":
+                sessions = data.get("data", [])
+                # 如果会话没有标题，添加默认标题
+                for session in sessions:
+                    if not session.get("title"):
+                        # 从session_id解析或生成标题
+                        if "create_time" in session:
+                            session["title"] = f"会话 {session['create_time'][5:10]}"
+                        else:
+                            session["title"] = "新会话"
+                return sessions
     except Exception as e:
-        st.error(f"获取会话消息失败: {e}")
+        st.warning("无法获取历史会话列表")
     return []
 
-# ======================
-# 初始化会话状态
-# ======================
-if "session_id" not in st.session_state:
-    st.session_state.session_id = f"session_{int(time.time())}"
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-if "is_loading" not in st.session_state:
-    st.session_state.is_loading = False
-if "current_prompt" not in st.session_state:
-    st.session_state.current_prompt = ""
 
-# ======================
-# 左侧侧边栏（历史会话+点击切换）
-# ======================
-with st.sidebar:
-    st.markdown("### 📊 AI 销售智能分析 Agent")
-    st.markdown("""
-    <div style='line-height:1.7;color:#444;font-size:14px;'>
-    专为销售团队打造的企业级多智能体决策系统，用于快速分析目标客户、行业动态与市场机会，一键生成客户价值评分与合作建议，帮助销售团队精准获客、提升转化效率，让每一次客户沟通都有数据支撑。
-    </div>
-    """, unsafe_allow_html=True)
-    st.divider()
+def api_get_session_messages(session_id):
+    """获取会话消息"""
+    try:
+        res = requests.get(f"http://127.0.0.1:8000/api/chat/get_session/{session_id}", timeout=60)
+        if res.status_code == 200:
+            data = res.json()
+            if data.get("code") == "success":
+                messages = data.get("data", [])
+                # 格式化消息
+                formatted_messages = []
+                for msg in messages:
+                    formatted_messages.append({
+                        "role": msg.get("role", "user"),
+                        "content": msg.get("content", "")
+                    })
+                return formatted_messages
+    except Exception as e:
+        st.warning(f"获取消息失败: {str(e)}")
+    return []
 
-    st.markdown("#### 📜 历史对话")
-    sessions = fetch_session_list()
 
-    if sessions:
-        for sess in sessions:
-            session_id = sess.get("session_id")
-            title = sess.get("title", "未命名会话")
-            # 用按钮实现点击切换，按钮文本显示title，绑定session_id
-            if st.button(f"📝 {title}", key=f"session_{session_id}", use_container_width=True):
-                # 点击时：1. 更新当前session_id 2. 加载对应消息 3. 刷新页面
-                st.session_state.session_id = session_id
-                st.session_state.messages = fetch_session_messages(session_id)
-                st.rerun()
-    else:
-        st.info("暂无历史会话")
+def api_send_message(session_id, question):
+    """发送消息并获取流式响应"""
+    try:
+        response = requests.post(
+            url="http://127.0.0.1:8000/api/chat/dialogue",
+            json={
+                "session_id": session_id,
+                "question": question
+            },
+            stream=True,
+            timeout=300
+        )
+        return response
+    except Exception as e:
+        st.error(f"请求失败: {str(e)}")
+    return None
 
-    st.divider()
 
-    if st.button("🔄 新建对话", use_container_width=True):
+# --------------------------
+# 会话状态管理
+# --------------------------
+def initialize_session_state():
+    """初始化会话状态"""
+    if "messages" not in st.session_state:
         st.session_state.messages = []
-        st.session_state.session_id = f"session_{int(time.time())}"
-        st.rerun()
+    if "session_id" not in st.session_state:
+        st.session_state.session_id = ""
+    if "waiting_for_response" not in st.session_state:
+        st.session_state.waiting_for_response = False
+    if "pending_prompt" not in st.session_state:
+        st.session_state.pending_prompt = ""
+    if "sessions" not in st.session_state:
+        st.session_state.sessions = []
+    if "api_status" not in st.session_state:
+        st.session_state.api_status = "checking"  # checking, online, offline
 
-# ======================
-# 主聊天区布局
-# ======================
-# 主容器
-st.markdown('<div class="main-chat-container">', unsafe_allow_html=True)
 
-# 1. 聊天消息区（可滚动）
-st.markdown('<div class="chat-messages">', unsafe_allow_html=True)
+# --------------------------
+# 侧边栏组件
+# --------------------------
+def render_sidebar():
+    """渲染侧边栏"""
+    with st.sidebar:
+        # 标题区域
+        col1, col2 = st.columns([1, 4])
+        with col1:
+            st.markdown("📊", unsafe_allow_html=True)
+        with col2:
+            st.markdown("### AI 销售智能分析")
+        st.caption("企业级多智能体决策系统")
+        st.divider()
 
-# 渲染历史消息（按时间顺序、正确区分身份）
-for msg in st.session_state.messages:
-    role = msg.get("role", "assistant")
-    content = msg.get("content", "")
-    if role == "user":
-        st.markdown(f"""
-<div class="user-box">
-  <div class="user-bubble">{content}</div>
-</div>
-""", unsafe_allow_html=True)
-    else:
-        st.markdown(f"""
-<div class="ai-box">
-  <div class="ai-bubble">{content}</div>
-</div>
-""", unsafe_allow_html=True)
+        # 状态指示器
+        status_col1, status_col2 = st.columns([1, 4])
+        with status_col1:
+            status_color = "#28a745" if st.session_state.api_status == "online" else "#dc3545"
+            st.markdown(f'<span class="status-indicator" style="background-color: {status_color};"></span>',
+                        unsafe_allow_html=True)
+        with status_col2:
+            status_text = "服务正常" if st.session_state.api_status == "online" else "服务异常"
+            st.caption(f"状态: {status_text}")
 
-# 流式回复渲染（加载中状态）
-if st.session_state.is_loading:
+        st.divider()
+
+        # 新建会话按钮
+        if st.button("➕ 新建对话", use_container_width=True, type="primary"):
+            new_sid = api_create_session()
+            if new_sid:
+                st.session_state.session_id = new_sid
+                st.session_state.messages = []
+                st.rerun()
+
+        st.divider()
+
+        # 历史对话列表
+        st.markdown("### 📜 历史对话")
+
+        # 加载会话列表
+        if not st.session_state.sessions:
+            sessions = api_get_sessions()
+            st.session_state.sessions = sessions
+        else:
+            sessions = st.session_state.sessions
+
+        if sessions:
+            for idx, sess in enumerate(sessions):
+                sid = sess.get("session_id", "")
+                title = sess.get("title", "未命名会话")
+                time_str = ""
+
+                # 格式化时间
+                if "create_time" in sess:
+                    time_str = sess["create_time"][5:10]  # MM-DD
+                elif "time" in sess:
+                    try:
+                        dt = datetime.fromisoformat(sess["time"].replace('Z', '+00:00'))
+                        time_str = dt.strftime("%m-%d %H:%M")
+                    except:
+                        time_str = ""
+
+                # 会话项容器
+                is_active = sid == st.session_state.session_id
+                active_class = "active" if is_active else ""
+
+                with st.container():
+                    col1, col2 = st.columns([5, 1])
+                    with col1:
+                        st.markdown(f"""
+                        <div class="session-item {active_class}" onclick="console.log('clicked')">
+                            <div class="title">{title}</div>
+                            <div class="time">{time_str}</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    with col2:
+                        if st.button("切换", key=f"switch_{idx}", use_container_width=True,
+                                     type="secondary" if not is_active else "primary"):
+                            st.session_state.session_id = sid
+                            st.session_state.messages = api_get_session_messages(sid)
+                            st.rerun()
+        else:
+            st.info("暂无历史对话记录")
+            st.markdown("---")
+            st.caption("点击上方按钮创建新对话")
+
+
+# --------------------------
+# 主界面组件
+# --------------------------
+def render_main_content():
+    """渲染主界面"""
+    # 顶部标题栏
+    col1, col2, col3 = st.columns([6, 1, 1])
+    with col1:
+        st.markdown("## 🤖AI销售智能分析代理")
+    with col2:
+        st.markdown("### 🎯专业版")
+    with col3:
+        if st.button("🚀部署", use_container_width=True):
+            st.info("部署功能开发中...")
+
+    # 当前会话信息
+    if st.session_state.session_id:
+        sessions = st.session_state.sessions
+        current_session = next((s for s in sessions if s.get("session_id") == st.session_state.session_id), None)
+        if current_session:
+            st.caption(f"当前会话: {current_session.get('title', '未命名会话')}")
+
+    # 聊天消息区域
+    chat_container = st.container()
+
+    with chat_container:
+        # 显示欢迎消息
+        if not st.session_state.messages and not st.session_state.session_id:
+            st.markdown("---")
+            st.markdown("### 👋 欢迎使用 AI 销售智能分析代理")
+            st.markdown("""
+            **功能介绍：**
+            - 💼 智能销售策略分析
+            - 📈 市场趋势预测
+            - 👥 客户画像分析
+            - 🤖 多智能体协同决策
+
+            **使用方式：**
+            1. 点击左侧"新建对话"开始
+            2. 输入您的销售相关问题
+            3. 获取专业的智能分析
+            """)
+
+        # 显示聊天历史
+        for msg in st.session_state.messages:
+            with st.chat_message(msg["role"]):
+                # 使用自定义样式包装消息
+                if msg["role"] == "user":
+                    st.markdown(f'<div class="user-message">{msg["content"]}</div>', unsafe_allow_html=True)
+                else:
+                    st.markdown(f'<div class="assistant-message">{msg["content"]}</div>', unsafe_allow_html=True)
+
+    # 输入区域
+    st.markdown("---")
+    prompt = st.chat_input(
+        "输入您想分析的内容...",
+        disabled=st.session_state.waiting_for_response,
+        key="chat_input"
+    )
+
+    return prompt
+
+
+# --------------------------
+# 处理消息发送
+# --------------------------
+def handle_user_message(prompt):
+    """处理用户发送的消息"""
+    if not st.session_state.session_id:
+        new_sid = api_create_session()
+        if not new_sid:
+            st.error("创建会话失败")
+            return
+        st.session_state.session_id = new_sid
+
+    # 添加用户消息到界面
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    st.session_state.pending_prompt = prompt
+    st.session_state.waiting_for_response = True
+
+    # 显示用户消息
+    with st.chat_message("user"):
+        st.markdown(f'<div class="user-message">{prompt}</div>', unsafe_allow_html=True)
+
+    st.rerun()
+
+
+# --------------------------
+# 处理AI响应
+# --------------------------
+def handle_ai_response():
+    """处理AI响应"""
+    if not st.session_state.waiting_for_response or not st.session_state.pending_prompt:
+        return
+
     with st.chat_message("assistant"):
-        placeholder = st.empty()
-        full_analysis = ""
-        url = "http://127.0.0.1:8000/api/chat/dialogue"
-        data = {
-            "session_id": st.session_state.session_id,
-            "question": st.session_state.current_prompt
-        }
+        response_container = st.empty()
+        full_response = ""
 
         try:
-            with requests.post(url, json=data, stream=True, timeout=300) as resp:
-                for line in resp.iter_lines():
+            # 发送请求获取流式响应
+            response = api_send_message(
+                st.session_state.session_id,
+                st.session_state.pending_prompt
+            )
+
+            if response and response.status_code == 200:
+                st.session_state.api_status = "online"
+
+                # 处理流式响应
+                for line in response.iter_lines():
                     if line:
                         try:
-                            chunk_data = json.loads(line.decode("utf-8"))
-                            result = chunk_data.get("summary", {}).get("result", {})
-                            analysis = result.get("analysis", "")
-                            if analysis:
-                                full_analysis += analysis
-                                placeholder.markdown(full_analysis)
-                        except:
+                            data = json.loads(line.decode("utf-8"))
+                            # 根据您的API响应结构调整
+                            if "summary" in data and "result" in data["summary"]:
+                                chunk = data["summary"]["result"].get("analysis", "")
+                            elif "analysis" in data:
+                                chunk = data["analysis"]
+                            else:
+                                # 尝试其他可能的字段
+                                chunk = str(data)
+
+                            if chunk:
+                                full_response += chunk
+                                response_container.markdown(f'<div class="assistant-message">{full_response}</div>',
+                                                            unsafe_allow_html=True)
+                        except json.JSONDecodeError:
                             continue
+            else:
+                full_response = "❌ 服务暂时不可用，请稍后重试"
+                response_container.markdown(f'<div class="assistant-message">{full_response}</div>',
+                                            unsafe_allow_html=True)
+
         except Exception as e:
-            full_analysis = "❌ 服务异常，请稍后重试"
-            placeholder.error(full_analysis)
+            full_response = f"❌ 请求发生错误: {str(e)}"
+            response_container.markdown(f'<div class="assistant-message">{full_response}</div>', unsafe_allow_html=True)
+            st.session_state.api_status = "offline"
 
-        # 请求完成，保存AI回复，关闭加载状态
-        st.session_state.messages.append({"role": "assistant", "content": full_analysis})
-        st.session_state.is_loading = False
-        st.rerun()
+        # 保存响应到消息历史
+        st.session_state.messages.append({"role": "assistant", "content": full_response})
 
-st.markdown('</div>', unsafe_allow_html=True)
-
-# 2. 输入框区（固定在底部）
-st.markdown('<div class="chat-input-container">', unsafe_allow_html=True)
-prompt = st.chat_input("输入你想分析的内容...")
-st.markdown('</div>', unsafe_allow_html=True)
-
-st.markdown('</div>', unsafe_allow_html=True)
-
-# ======================
-# 发送消息逻辑
-# ======================
-if prompt and not st.session_state.is_loading:
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    st.session_state.current_prompt = prompt
-    st.session_state.is_loading = True
+    # 重置状态
+    st.session_state.pending_prompt = ""
+    st.session_state.waiting_for_response = False
     st.rerun()
+
+
+# --------------------------
+# 主应用逻辑
+# --------------------------
+def main():
+    """主应用函数"""
+    # 初始化状态
+    initialize_session_state()
+
+    # 渲染侧边栏
+    render_sidebar()
+
+    # 渲染主内容
+    prompt = render_main_content()
+
+    # 处理用户输入
+    if prompt and not st.session_state.waiting_for_response:
+        handle_user_message(prompt)
+
+    # 处理AI响应
+    if st.session_state.waiting_for_response:
+        handle_ai_response()
+
+    # 检查API状态
+    if st.session_state.api_status == "checking":
+        try:
+            # 简单测试API连接
+            test_response = requests.get("http://127.0.0.1:8000/api/chat/get_sessions?skip=0&limit=1", timeout=60)
+            if test_response.status_code == 200:
+                st.session_state.api_status = "online"
+            else:
+                st.session_state.api_status = "offline"
+        except:
+            st.session_state.api_status = "offline"
+
+
+# --------------------------
+# 运行应用
+# --------------------------
+if __name__ == "__main__":
+    main()
