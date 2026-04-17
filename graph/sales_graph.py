@@ -1,5 +1,3 @@
-from sre_parse import State
-
 from node.company_node import company_node
 from node.industry_node import industry_node
 from node.merge_node import merge_node
