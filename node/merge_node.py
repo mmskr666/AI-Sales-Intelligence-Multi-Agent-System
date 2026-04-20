@@ -3,7 +3,7 @@ from tools.logger import logger
 
 
 def merge_node(state:SalesState):
-    logger.debug("👉 Merge Node")
+    logger.info("👉 Merge Node")
     return {
         "merge_ready": True
     }

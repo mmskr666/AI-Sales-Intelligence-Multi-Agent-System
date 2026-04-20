@@ -12,5 +12,5 @@ def run_with_timeout(func, timeout=10):
         except TimeoutError:
             raise TimeoutError("Function execution timed out.")
 
-def task(llm_with_tools, tools_map, text):
-    return lambda:run_mcp_agent(llm_with_tools, tools_map, text)
+async def task(llm_with_tools, tools_map, text):
+    return await run_mcp_agent(llm_with_tools, tools_map, text)

@@ -1,31 +1,23 @@
+import asyncio
 import json
 
 from langchain_core.prompts import ChatPromptTemplate
 from sentence_transformers import CrossEncoder
 from rank_bm25 import BM25Okapi
 from config.configuration import CROSS_ENCODER_MODEL_NAME
+from core.globals import REWRITE_CHAIN,MULTI_CHAIN
 from knowledge.rag_tools import load_text, clean_txt, cleaned_text, spilt_text
 from prompt.multi_prompt import multi_prompt
 from prompt.rewrite_prompt import rewrite_prompt
 from tools.llm_factory import create_llm
 
-prompt_rewrite = ChatPromptTemplate.from_messages([
-    ("system",rewrite_prompt),
-    ("human","用户输入：{text}")
-])
-chain_rewrite = prompt_rewrite | create_llm()
-def rewrite(text:str):
-   result = chain_rewrite.invoke({"text":text})
+
+async def rewrite(text:str)->str:
+   result = await REWRITE_CHAIN.ainvoke({"text":text})
    return result.content
 
-
-prompt_multi = ChatPromptTemplate.from_messages([
-    ("system",multi_prompt),
-    ("human","用户输入：{text}")
-])
-chain_multi = prompt_multi | create_llm()
-def multi_query(text:str):
-    response = chain_multi.invoke({"text":text})
+async def multi_query(text:str):
+    response = await MULTI_CHAIN.ainvoke({"text":text})
     return json.loads(response.content)
 
 model = CrossEncoder(CROSS_ENCODER_MODEL_NAME)
@@ -100,3 +92,9 @@ def build_bm25():
     bm25 = BM25Okapi(tokenized_corpus)
 
     return bm25, corpus, split_docs   # ✅ 多返回一个 split_docs
+
+async def async_rerank_cross_encoder(query, docs, top_k=3):
+    return await asyncio.to_thread(rerank_cross_encoder, query, docs, top_k)
+
+async def async_hybrid_search(query, retriever, bm25, corpus, docs, k=5):
+    return await asyncio.to_thread(hybrid_search, query, retriever, bm25, corpus, docs, k)

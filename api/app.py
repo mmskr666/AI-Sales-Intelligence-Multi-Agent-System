@@ -56,94 +56,63 @@ async def generate_response(session_id: str, question: str) -> Dict[str, Any]:
     """生成完整响应，不再流式"""
     logger.info(f"开始处理问题: {question}")
 
-    # 获取图实例
     graph = await get_graph()
 
-    # 用来存最终的 analysis 文本
-    all_chunks = []
-    final_analysis = ""
-    company = ""
-    industry = ""
-    score = 0
-    recommendation = ""
-
     try:
-        # 收集所有chunk
-        async for chunk in graph.astream({
+        # ✅ 关键修复：用 ainvoke 一次性获取结果，不再流式
+        final_state = await graph.ainvoke({
             "input": question,
             "session_id": session_id
-        }):
-            all_chunks.append(chunk)
-            logger.debug(f"处理chunk: {chunk}")
+        })
+        logger.info(f"final_state: {final_state}")
+        # ✅ 【修复完成】正确取出 result 字典
+        result = final_state.get("result", {})
 
-            # 安全取出 result
-            summary = chunk.get("summary", {})
-            result = summary.get("result", {})
-
-            # 提取各个字段
-            chunk_company = result.get("company", "")
-            chunk_industry = result.get("industry", "")
-            chunk_analysis = result.get("analysis", "")
-            chunk_score = result.get("score", 0)
-            chunk_recommendation = result.get("recommendation", "")
-
-            # 更新最终结果
-            if chunk_company and chunk_company != "未提供":
-                company = chunk_company
-            if chunk_industry and chunk_industry != "未提供":
-                industry = chunk_industry
-            if chunk_analysis:
-                final_analysis += chunk_analysis
-            if chunk_score:
-                score = chunk_score
-            if chunk_recommendation:
-                recommendation = chunk_recommendation
+        company = result.get("company", "")
+        industry = result.get("industry", "")
+        final_analysis = result.get("analysis", "")
+        score = result.get("score", 0)
+        recommendation = result.get("recommendation", "")
 
     except Exception as e:
         logger.error(f"处理图流失败: {e}")
         raise Exception(f"AI处理失败: {str(e)}")
 
+    # ✅ 【修复完成】清洗空白字符 + 正确判断逻辑
+    company_clean = company.strip()
+    industry_clean = industry.strip()
 
-
-
-
-    # 构建返回数据
-    result_data = {}
-
-    # 判断是自然闲聊还是公司分析
-    if company in ["未提供", "", "无"] and industry in ["未提供", "", "无"]:
-        # 自然闲聊，只返回analysis
+    # 闲聊
+    if (company_clean in ["未提供", "", "无"]) and (industry_clean in ["未提供", "", "无"]):
         result_data = {
             "type": "chat",
             "content": final_analysis
         }
     else:
-        # 公司分析，返回结构化数据
         result_data = {
             "type": "analysis",
             "data": {
-                "company": company,
-                "industry": industry,
+                "company": company_clean,
+                "industry": industry_clean,
                 "analysis": final_analysis,
                 "score": score,
                 "recommendation": recommendation
             }
         }
-    # ------------ 保存数据库 ------------
+
+    # 保存数据库
     try:
         async with AsyncSessionLocal() as tmp_db:
-            # 会话不存在则创建
             session = await get_session_by_id(tmp_db, session_id)
             if not session:
                 await save_session(tmp_db, session_id, create_session_title())
 
-            # 保存消息
             await save_message(tmp_db, session_id, "user", question)
             if final_analysis:
-                await save_message(tmp_db, session_id, "assistant", json.dumps(result_data,ensure_ascii=False))
+                await save_message(tmp_db, session_id, "assistant", json.dumps(result_data, ensure_ascii=False))
     except Exception as e:
         logger.error(f"保存消息到数据库失败: {e}")
-        # 不中断，继续返回结果
+
     logger.info(f"处理完成，结果类型: {result_data.get('type')}")
     return result_data
 
