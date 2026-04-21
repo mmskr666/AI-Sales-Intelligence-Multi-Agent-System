@@ -10,7 +10,7 @@ from tools.graph_store import startup_graph
 app = FastAPI()
 
 app.include_router(app_router)
-
+print("uvicorn startup")
 # 服务一启动就加载Graph
 @app.on_event("startup")
 async def on_startup():
